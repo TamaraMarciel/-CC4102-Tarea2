@@ -17,10 +17,10 @@ using namespace std;
 struct Nodo {
     Nodo *parent;
     vector<Nodo*> next[27];
-    int priority; //??
-    string *str;
+    long long priority; //vi que era mejor porque podía ser un número muy grande
+    string str; //entiendo que c++ ya maneja los strings por debajo como punteros
     Nodo *best_terminal;
-    int best_priority; //??
+    long long best_priority; //tipo cambiado por long long
 };
 
 #endif // ESTRUCTURAS_H
