@@ -5,12 +5,11 @@
 
 using namespace std;
 
-Trie::Trie() : nodos(0) {}
+Trie::Trie() : nodos(0) {} //definición del constructor de la clase Trie
 
 void Trie::crear_nodo(Nodo *n, int i){
-    Nodo m;
-    &n->next[i] = m; //algo falla
-    nodos++;
+    n->next[i] = new Nodo(); //crea nuevo nodo hijo dinámicamente
+    nodos++;                 //aumenta contador de nodos
 }
 
 void Trie::insert(string w){
@@ -31,4 +30,12 @@ void Trie::insert(string w){
     /**
      * añadir $
      */
+}
+
+Nodo * Trie :: descend(Nodo *v, char c){
+
+}
+
+Nodo * Trie :: autocomplete(Nodo *v){
+
 }
