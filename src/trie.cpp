@@ -38,13 +38,28 @@ void Trie::insert(string w){
 
     //el nodo alcanzado por '$' es el terminal
     n = n->next[fin];
-    n->str = new string(w);  // guarda la palabra asociada
-    n->priority = 0;         // prioridad inicial
-    n->best_terminal = n;    // por ahora él mismo es el mejor
+    n->str = new string(w);  //guarda la palabra asociada
+    n->priority = 0;         //prioridad inicial
+    n->best_terminal = n;    //por ahora él mismo es el mejor
     n->best_priority = 0;
 }
 
 Nodo * Trie :: descend(Nodo *v, char c){
+    int indice;
+    if (c == '$') {
+        indice = 26;  //el carácter especial del fin de palabra
+    }
+    else {
+        indice = static_cast<int>(c) - 97;
+    }
+    Nodo * sgte = v->next[indice];
+    if (sgte != nullptr) {
+        return sgte;
+    }
+    
+    else {
+        return nullptr;
+    }
 
 }
 
