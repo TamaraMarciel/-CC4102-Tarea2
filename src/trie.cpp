@@ -73,7 +73,30 @@ Nodo * Trie :: descend(Nodo *v, char c){
 
 }
 
-Nodo * Trie :: autocomplete(Nodo *v){
-    return v->best_terminal
+Nodo * Trie :: update_priority(v){
+    if (v != nullptr) {
+        if (mode == 'frecuente') {
+            v->priority++;
+            if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
+                update_priority(v->parent)
+            }
 
+        }
+        if (mode == 'reciente') {
+            v->priority = obtenerTimestamp();
+            if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
+                update_priority(v->parent)
+            }
+            
+        }
+    }
+
+}
+
+Nodo * Trie :: autocomplete(Nodo *v){
+    if (v == nullptr){
+        return nullptr;
+    }
+
+    return v-> best_terminal;
 }
