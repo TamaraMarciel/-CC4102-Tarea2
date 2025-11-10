@@ -14,16 +14,19 @@ using namespace std;
  */
 class Trie {
 private:
-    Nodo raiz;
-    int nodos; // contador de nodos del Trie
+    Nodo* raiz; //puntero a la raíz
+    long long nodos; // contador de nodos del Trie
+    string priority_mode; //variable para saber cómo se está evaluando la prioridad
+    long long access_timestamp; //variable para el tiempo de acceso
 
 public:
-    Trie();
+    Trie(const string& mode); //constructor del Trie con el modo de la prioridad
+    ~Trie(); //destructor
 
     /**
      * Dado un nodo crea un nodo en la direccion i de next 
      */
-    void crear_nodo(Nodo *n, int i);
+    void crear_nodo(Nodo *n, int i); //creo que no es necesaria, lo estoy revisando
 
     /**
      * Insetar una palabra caracter por caracter
@@ -47,6 +50,11 @@ public:
      * actualiza a los nodos en el camino a la raiz
      */
     void update_priority(Nodo *v);
+
+    //funciones de ayuda/getters
+    long long get_nodos() const;
+    Nodo* get_raiz();
+    Nodo* find_terminal_node(const std::string& w); // Muy útil para la simulación
 
 };
 
