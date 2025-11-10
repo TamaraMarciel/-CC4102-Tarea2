@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <climits>
+#include <chrono>
 
 using namespace std;
 
@@ -11,6 +12,15 @@ void Trie::crear_nodo(Nodo *n, int i){
     n->next[i] = new Nodo(); //crea nuevo nodo hijo dinámicamente
     nodos++;                 //aumenta contador de nodos
 }
+
+long long obtenerTimestamp() {
+    auto ahora = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+        ahora.time_since_epoch()
+    ).count();
+    return timestamp;
+}
+
 
 void Trie::insert(string w){
     int largo = w.size();
@@ -64,5 +74,6 @@ Nodo * Trie :: descend(Nodo *v, char c){
 }
 
 Nodo * Trie :: autocomplete(Nodo *v){
+    return v->best_terminal
 
 }

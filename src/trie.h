@@ -29,6 +29,11 @@ public:
     void crear_nodo(Nodo *n, int i); //creo que no es necesaria, lo estoy revisando
 
     /**
+     * Retorna el Timestamp de ese preciso momento
+     */
+    long long obtenerTimestamp();
+
+    /**
      * Insetar una palabra caracter por caracter
      * Se crean Nodos en el Trie de ser necesario
      */
