@@ -14,9 +14,9 @@ using namespace std;
  */
 class Trie {
 private:
-    Nodo* raiz; //puntero a la raíz
+    Nodo raiz; //puntero a la raíz
     long long nodos; // contador de nodos del Trie
-    string priority_mode; //variable para saber cómo se está evaluando la prioridad
+    string mode; //variable para saber cómo se está evaluando la prioridad
     long long access_timestamp; //variable para el tiempo de acceso
 
 public:
@@ -60,6 +60,14 @@ public:
     long long get_nodos() const;
     Nodo* get_raiz();
     Nodo* find_terminal_node(const std::string& w); // Muy útil para la simulación
+
+   
+private:
+    /**
+     * Función auxiliar recursiva para destruir el Trie
+     * @param n: nodo a destruir
+     */
+    void destruir_nodo(Nodo *n);   
 
 };
 

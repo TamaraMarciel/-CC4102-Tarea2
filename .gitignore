@@ -33,6 +33,8 @@
 *.lib
 
 # Executables
+trie_test
+trie_experimentos
 *.exe
 *.out
 *.app

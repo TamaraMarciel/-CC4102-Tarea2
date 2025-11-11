@@ -6,16 +6,53 @@
 
 using namespace std;
 
-Trie::Trie() : nodos(0) {} //definición del constructor de la clase Trie
+Trie::Trie(const string& priority_mode) 
+    : nodos(1), mode(priority_mode), access_timestamp(0) {
+    // La raíz ya está inicializada por su constructor
+    raiz.parent = nullptr;
+} //definición del constructor de la clase Trie
+
+
+// Destructor
+Trie::~Trie() {
+    // Destruir todos los nodos excepto la raíz (que es un objeto, no puntero)
+    for (int i = 0; i < 27; i++) {
+        if (raiz.next[i] != nullptr) {
+            destruir_nodo(raiz.next[i]);
+        }
+    }
+}
+
+void Trie::destruir_nodo(Nodo *n) {
+    if (n == nullptr) return;
+    
+    // Destruir todos los hijos recursivamente
+    for (int i = 0; i < 27; i++) {
+        if (n->next[i] != nullptr) {
+            destruir_nodo(n->next[i]);
+        }
+    }
+    
+    // Liberar el string si existe
+    if (n->str != nullptr) {
+        delete n->str;
+    }
+    
+    // Liberar el nodo
+    delete n;
+}
+
+
 
 void Trie::crear_nodo(Nodo *n, int i){
     n->next[i] = new Nodo(); //crea nuevo nodo hijo dinámicamente
+    n->next[i] -> parent = n; // se define al padre
     nodos++;                 //aumenta contador de nodos
 }
 
-long long obtenerTimestamp() {
-    auto ahora = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+long long Trie::obtenerTimestamp() {
+    auto ahora = chrono::system_clock::now();
+    auto timestamp = chrono::duration_cast<chrono::seconds>(
         ahora.time_since_epoch()
     ).count();
     return timestamp;
@@ -32,10 +69,10 @@ void Trie::insert(string w){
          * Si nodo en next existe bajar por ahi
          * Si no crear nodo en next y bajar
          */
-        if (n->next[i] == nullptr){
-            crear_nodo(n, i);
+        if (n->next[indice] == nullptr){
+            crear_nodo(n, indice);
         }
-        n = n->next[i];
+        n = n->next[indice];
     }
     /**
      * añadir $
@@ -43,8 +80,9 @@ void Trie::insert(string w){
 
      //insertar el carácter '$' que marca el fin de palabra
     int fin = 26;
-    if (n->next[fin] == nullptr)
+    if (n->next[fin] == nullptr){
         crear_nodo(n, fin);
+    }
 
     //el nodo alcanzado por '$' es el terminal
     n = n->next[fin];
@@ -73,19 +111,19 @@ Nodo * Trie :: descend(Nodo *v, char c){
 
 }
 
-Nodo * Trie :: update_priority(v){
+void Trie :: update_priority(Nodo *v){
     if (v != nullptr) {
-        if (mode == 'frecuente') {
+        if (mode == "frecuente") {
             v->priority++;
             if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
-                update_priority(v->parent)
+                update_priority(v->parent);
             }
 
         }
-        if (mode == 'reciente') {
+        if (mode == "reciente") {
             v->priority = obtenerTimestamp();
             if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
-                update_priority(v->parent)
+                update_priority(v->parent);
             }
             
         }
@@ -99,4 +137,28 @@ Nodo * Trie :: autocomplete(Nodo *v){
     }
 
     return v-> best_terminal;
+}
+
+long long Trie::get_nodos() const {
+    return nodos;
+}
+
+Nodo* Trie::get_raiz() {
+    return &raiz;
+}
+
+Nodo* Trie::find_terminal_node(const string& w) {
+    Nodo *n = &raiz;
+    
+    // Descender por cada carácter
+    for (char c : w) {
+        n = descend(n, c);
+        if (n == nullptr) {
+            return nullptr;
+        }
+    }
+    
+    // Descender por '$' para llegar al terminal
+    n = descend(n, '$');
+    return n;
 }
