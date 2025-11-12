@@ -235,8 +235,7 @@ void guardar_muestras_csv(const string& dataset, const string& modo,
 
 /**
  * Experimento 3: Análisis de Autocompletado
- * CORREGIDO: Ahora guarda muestras en potencias de 2 para graficar evolución
- * El porcentaje se calcula respecto al TOTAL del texto, no al acumulado
+ * Porcentaje respecto a caracteres acumulados hasta el momento (más intuitivo)
  */
 ResultadoAutocompletado experimento_autocompletado_detallado(
     Trie& trie, 
@@ -253,12 +252,6 @@ ResultadoAutocompletado experimento_autocompletado_detallado(
     resultado.caracteres_total = 0;
     resultado.caracteres_escritos = 0;
     
-    // NUEVO: Calcular TOTAL de caracteres del texto completo primero
-    long long caracteres_total_texto = 0;
-    for (const auto& palabra : texto) {
-        caracteres_total_texto += palabra.length();
-    }
-    
     // Vector para guardar muestras en potencias de 2
     vector<tuple<long long, long long, long long, double>> muestras;
     
@@ -266,6 +259,7 @@ ResultadoAutocompletado experimento_autocompletado_detallado(
     
     for (size_t idx = 0; idx < texto.size(); idx++) {
         const string& palabra = texto[idx];
+        resultado.caracteres_total += palabra.length();  // Suma acumulativa
         
         Nodo* nodo_actual = trie.get_raiz();
         bool encontrada = false;
@@ -315,21 +309,20 @@ ResultadoAutocompletado experimento_autocompletado_detallado(
         size_t i = idx + 1;  // Palabras procesadas hasta ahora
         bool reportar = (i == texto.size()) || ((i & (i - 1)) == 0);
         
-        if (reportar && caracteres_total_texto > 0) {
-            // Porcentaje respecto al TOTAL del texto, no al acumulado
+        if (reportar && resultado.caracteres_total > 0) {
+            // Porcentaje respecto a caracteres ACUMULADOS hasta este momento
             double porcentaje_actual = 
-                (double)resultado.caracteres_escritos / caracteres_total_texto * 100.0;
+                (double)resultado.caracteres_escritos / resultado.caracteres_total * 100.0;
             
-            muestras.push_back({i, caracteres_total_texto, 
+            muestras.push_back({i, resultado.caracteres_total, 
                                resultado.caracteres_escritos, porcentaje_actual});
         }
     }
     
     auto end = chrono::high_resolution_clock::now();
     resultado.tiempo_ms = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-    resultado.caracteres_total = caracteres_total_texto;  // Guardar el total correcto
     resultado.porcentaje_escrito = 
-        (double)resultado.caracteres_escritos / caracteres_total_texto * 100.0;
+        (double)resultado.caracteres_escritos / resultado.caracteres_total * 100.0;
     
     // Guardar muestras detalladas para graficar
     guardar_muestras_csv(nombre_dataset, modo, muestras, 
