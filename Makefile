@@ -1,92 +1,84 @@
 # Makefile para Tarea 2 - Tries para Autocompletado
+# Optimizado para Windows (MinGW/MSYS2)
 
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 HEADERS = src/trie.h src/estructuras.h
 
 # Targets
-TARGET_MAIN = trie_test
-TARGET_EXP = trie_experimentos
+TARGET_EXP = trie_experimentos.exe
 
-# Archivos fuente
-TRIE_SRC = src/trie.cpp
-MAIN_SRC = src/main.cpp
-EXP_SRC = src/experimentos.cpp
-
-# Archivos objeto
+# Archivos fuente y objeto
 TRIE_OBJ = src/trie.o
-MAIN_OBJ = src/main.o
 EXP_OBJ = src/experimentos.o
 
-# Regla principal: compila ambos programas
-all: $(TARGET_MAIN) $(TARGET_EXP)
+# Regla por defecto: compilar experimentos
+all: $(TARGET_EXP)
+	@echo.
+	@echo ============================================
+	@echo   COMPILACION EXITOSA
+	@echo ============================================
+	@echo.
+	@echo Para ejecutar: make run
+	@echo.
 
-# Programa de prueba simple
-$(TARGET_MAIN): $(TRIE_OBJ) $(MAIN_OBJ)
-	$(CXX) $(CXXFLAGS) -o $(TARGET_MAIN) $(TRIE_OBJ) $(MAIN_OBJ)
-
-# Programa de experimentación completa
+# Programa de experimentación
 $(TARGET_EXP): $(TRIE_OBJ) $(EXP_OBJ)
 	$(CXX) $(CXXFLAGS) -o $(TARGET_EXP) $(TRIE_OBJ) $(EXP_OBJ)
 
-# Compilar archivos objeto
-src/%.o: src/%.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Compilar trie.cpp
+src/trie.o: src/trie.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c src/trie.cpp -o src/trie.o
 
-# Limpiar archivos generados
-clean:
-	rm -f $(TRIE_OBJ) $(MAIN_OBJ) $(EXP_OBJ)
-	rm -f $(TARGET_MAIN) $(TARGET_EXP)
-	rm -rf output/
+# Compilar experimentos.cpp
+src/experimentos.o: src/experimentos.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c src/experimentos.cpp -o src/experimentos.o
 
-# Ejecutar programa de prueba
-test: $(TARGET_MAIN)
-	./$(TARGET_MAIN)
-
-# Ejecutar experimentación completa
+# Ejecutar experimentos
 run: $(TARGET_EXP)
-	./$(TARGET_EXP)
+	@if not exist output mkdir output
+	@echo.
+	@echo Ejecutando experimentos...
+	@echo ADVERTENCIA: Esto puede tardar 20-40 minutos
+	@echo.
+	$(TARGET_EXP)
+
+# Limpiar (compatible con Windows)
+clean:
+	@echo Limpiando archivos...
+	@if exist src\trie.o del src\trie.o
+	@if exist src\experimentos.o del src\experimentos.o
+	@if exist $(TARGET_EXP) del $(TARGET_EXP)
+	@echo Limpieza completa.
+
+# Limpiar todo incluyendo output/
+clean-all: clean
+	@if exist output rmdir /S /Q output
+	@echo Output eliminado.
 
 # Ayuda
 help:
-	@echo "Makefile para Tarea 2 - Tries para Autocompletado"
-	@echo ""
-	@echo "IMPORTANTE: Los archivos .txt deben estar en ./data/"
-	@echo ""
-	@echo "Uso:"
-	@echo "  make              - Compila ambos programas"
-	@echo "  make test         - Compila y ejecuta pruebas simples"
-	@echo "  make run          - Compila y ejecuta experimentación completa"
-	@echo "  make clean        - Elimina archivos generados"
-	@echo "  make help         - Muestra esta ayuda"
-	@echo ""
-	@echo "Programas generados:"
-	@echo "  trie_test         - Pruebas básicas y debugging"
-	@echo "  trie_experimentos - Experimentación completa con salida a CSV"
+	@echo ============================================
+	@echo   MAKEFILE - TAREA 2 TRIES
+	@echo ============================================
+	@echo.
+	@echo Comandos:
+	@echo   make          - Compila el proyecto
+	@echo   make run      - Ejecuta experimentos (20-40 min)
+	@echo   make clean    - Limpia .o y .exe
+	@echo   make clean-all- Limpia todo incluyendo output/
+	@echo   make help     - Muestra esta ayuda
+	@echo.
+	@echo Archivos necesarios en data/:
+	@echo   - words.txt
+	@echo   - wikipedia.txt  
+	@echo   - random.txt
+	@echo   - random_with_distribution.txt
+	@echo.
+	@echo Resultados CSV en output/:
+	@echo   - resultados_memoria.csv
+	@echo   - resultados_tiempo.csv
+	@echo   - resultados_autocompletado.csv
+	@echo.
 
-.PHONY: all clean run test help
-
-
-# Makefile para validación del Trie
-
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
-HEADERS = trie.h estructuras.h
-
-# Target para validación
-validacion: trie.o validacion.o
-	$(CXX) $(CXXFLAGS) -o validacion trie.o validacion.o
-
-# Compilar objetos
-%.o: %.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Limpiar
-clean:
-	rm -f *.o validacion
-
-# Ejecutar validación
-test: validacion
-	./validacion
-
-.PHONY: clean test
+.PHONY: all clean clean-all run help

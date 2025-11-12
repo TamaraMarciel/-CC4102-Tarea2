@@ -45,3 +45,7 @@ trie_experimentos
 .vscode/
 output/*
 data/*
+
+# Archivos de resultados
+resultados_*.csv
+grafico_*.png

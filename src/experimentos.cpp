@@ -5,8 +5,6 @@
 #include <chrono>
 #include <iomanip>
 #include <cmath>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 using namespace std;
 
@@ -186,7 +184,7 @@ struct ResultadoAutocompletado {
 };
 
 /**
- * Guarda resultados de autocompletado en CSV
+ * Guarda resultados de autocompletado en CSV (resumen)
  */
 void guardar_autocompletado_csv(const vector<ResultadoAutocompletado>& resultados,
                                 const string& archivo) {
@@ -213,7 +211,32 @@ void guardar_autocompletado_csv(const vector<ResultadoAutocompletado>& resultado
 }
 
 /**
+ * Guarda muestras detalladas (en potencias de 2) para graficar evolución
+ */
+void guardar_muestras_csv(const string& dataset, const string& modo,
+                          const vector<tuple<long long, long long, long long, double>>& muestras,
+                          const string& archivo) {
+    ofstream file(archivo, ios::app);  // Append mode
+    
+    if (!file.is_open()) {
+        cerr << "Error: No se pudo abrir " << archivo << endl;
+        return;
+    }
+    
+    for (const auto& [palabras, chars_total, chars_escritos, porcentaje] : muestras) {
+        file << dataset << "," << modo << "," 
+             << palabras << "," << chars_total << "," 
+             << chars_escritos << "," << fixed << setprecision(2) 
+             << porcentaje << "\n";
+    }
+    
+    file.close();
+}
+
+/**
  * Experimento 3: Análisis de Autocompletado
+ * CORREGIDO: Ahora guarda muestras en potencias de 2 para graficar evolución
+ * El porcentaje se calcula respecto al TOTAL del texto, no al acumulado
  */
 ResultadoAutocompletado experimento_autocompletado_detallado(
     Trie& trie, 
@@ -230,10 +253,19 @@ ResultadoAutocompletado experimento_autocompletado_detallado(
     resultado.caracteres_total = 0;
     resultado.caracteres_escritos = 0;
     
+    // NUEVO: Calcular TOTAL de caracteres del texto completo primero
+    long long caracteres_total_texto = 0;
+    for (const auto& palabra : texto) {
+        caracteres_total_texto += palabra.length();
+    }
+    
+    // Vector para guardar muestras en potencias de 2
+    vector<tuple<long long, long long, long long, double>> muestras;
+    
     auto start = chrono::high_resolution_clock::now();
     
-    for (const string& palabra : texto) {
-        resultado.caracteres_total += palabra.length();
+    for (size_t idx = 0; idx < texto.size(); idx++) {
+        const string& palabra = texto[idx];
         
         Nodo* nodo_actual = trie.get_raiz();
         bool encontrada = false;
@@ -278,12 +310,30 @@ ResultadoAutocompletado experimento_autocompletado_detallado(
                 resultado.palabras_no_encontradas++;
             }
         }
+        
+        // NUEVO: Muestrear en potencias de 2 y al final
+        size_t i = idx + 1;  // Palabras procesadas hasta ahora
+        bool reportar = (i == texto.size()) || ((i & (i - 1)) == 0);
+        
+        if (reportar && caracteres_total_texto > 0) {
+            // Porcentaje respecto al TOTAL del texto, no al acumulado
+            double porcentaje_actual = 
+                (double)resultado.caracteres_escritos / caracteres_total_texto * 100.0;
+            
+            muestras.push_back({i, caracteres_total_texto, 
+                               resultado.caracteres_escritos, porcentaje_actual});
+        }
     }
     
     auto end = chrono::high_resolution_clock::now();
     resultado.tiempo_ms = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+    resultado.caracteres_total = caracteres_total_texto;  // Guardar el total correcto
     resultado.porcentaje_escrito = 
-        (double)resultado.caracteres_escritos / resultado.caracteres_total * 100.0;
+        (double)resultado.caracteres_escritos / caracteres_total_texto * 100.0;
+    
+    // Guardar muestras detalladas para graficar
+    guardar_muestras_csv(nombre_dataset, modo, muestras, 
+                        "output/resultados_autocompletado_detallado.csv");
     
     return resultado;
 }
@@ -299,6 +349,11 @@ void experimentos_autocompletado(const vector<string>& palabras_dict,
     cout << "\n========== EXPERIMENTO 3: AUTOCOMPLETADO ==========" << endl;
     
     vector<ResultadoAutocompletado> todos_resultados;
+    
+    // Crear header del CSV detallado
+    ofstream detallado("output/resultados_autocompletado_detallado.csv");
+    detallado << "Dataset,Modo,Palabras,Caracteres_Total,Caracteres_Escritos,Porcentaje\n";
+    detallado.close();
     
     // Crear tries para ambos modos
     cout << "\nCreando Trie (modo frecuente)..." << endl;
@@ -356,6 +411,10 @@ void experimentos_autocompletado(const vector<string>& palabras_dict,
     if (!todos_resultados.empty()) {
         guardar_autocompletado_csv(todos_resultados, "output/resultados_autocompletado.csv");
     }
+    
+    cout << "\nSe generaron 2 archivos CSV:" << endl;
+    cout << "  - resultados_autocompletado.csv (resumen final)" << endl;
+    cout << "  - resultados_autocompletado_detallado.csv (evolución en potencias de 2)" << endl;
 }
 
 int main() {
@@ -393,7 +452,8 @@ int main() {
     cout << "\nArchivos generados:" << endl;
     cout << "  - resultados_memoria.csv" << endl;
     cout << "  - resultados_tiempo.csv" << endl;
-    cout << "  - resultados_autocompletado.csv" << endl;
+    cout << "  - resultados_autocompletado.csv (resumen)" << endl;
+    cout << "  - resultados_autocompletado_detallado.csv (evolución)" << endl;
     
     return 0;
 }
