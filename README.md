@@ -9,28 +9,22 @@ Antes de ejecutar los experimentos, verifica que tienes:
 ```
 -CC4102-Tarea2/
 ├── src/
-│   ├── estructuras.h (CORREGIDO)
+│   ├── estructuras.h 
 │   ├── trie.h
-│   ├── trie.cpp (CORREGIDO)
-│   ├── main.cpp
+│   ├── trie.cpp 
 │   ├── experimentos.cpp
-│   └── validacion.cpp (opcional)
+│   └── validacion_simple.cpp (opcional)
 ├── data/
-│   ├── words.txt (262,144 palabras - 2^18)
-│   ├── wikipedia.txt (4,194,304 palabras - 2^22)
-│   ├── random.txt (4,194,304 palabras - 2^22)
-│   └── random_with_distribution.txt (4,194,304 palabras - 2^22)
-├── output/ (se creará automáticamente)
+│   ├── words.txt 
+│   ├── wikipedia.txt 
+│   ├── random.txt 
+│   └── random_with_distribution.txt 
+├── output/ (crearlo)
 ├── Makefile
 └── README.md
 ```
 
 ### 2. Verificar que tienes los archivos corregidos
-
-**IMPORTANTE:** Asegúrate de haber aplicado las correcciones a:
-- ✅ `src/estructuras.h` - Con constructor de inicialización
-- ✅ `src/trie.cpp` - Con update_priority corregido
-
 ---
 
 ## 🚀 PASO 1: Verificar el Proyecto
@@ -39,14 +33,7 @@ Ejecuta el script de verificación en PowerShell:
 
 ```powershell
 # Ir a la raíz del proyecto
-cd "N:\u\Primavera 2025\Algoritmos\-CC4102-Tarea2"
-
-# Ejecutar script de verificación (si lo tienes)
-.\check_proyecto.ps1
-
-# O verifica manualmente:
-Get-ChildItem -Recurse | Select-Object FullName
-```
+cd "\-CC4102-Tarea2"
 
 **Verifica que existan:**
 - ✅ Carpeta `data/` con los 4 archivos .txt
@@ -96,8 +83,6 @@ cd ..
 ```
 
 **Si ves errores de compilación:**
-- Verifica que aplicaste las correcciones
-- Revisa que `estructuras.h` tenga el constructor
 - Asegúrate de estar usando C++17 o superior
 
 ---
@@ -108,10 +93,10 @@ cd ..
 
 ```powershell
 # Asegúrate de estar en la raíz del proyecto
-cd "N:\u\Primavera 2025\Algoritmos\-CC4102-Tarea2"
+cd "\-CC4102-Tarea2"
 
 # Ejecutar experimentos
-.\trie_experimentos.exe
+make run
 ```
 
 ### Salida Esperada
@@ -182,6 +167,7 @@ Archivos generados:
   - resultados_memoria.csv
   - resultados_tiempo.csv
   - resultados_autocompletado.csv
+  - resultados_autocompletado_detallado.csv (evoluci├│n)
 ```
 
 ---
