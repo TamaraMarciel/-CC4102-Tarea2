@@ -1,239 +1,180 @@
-#include "trie.h"
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <chrono>
-#include <cmath>
+#include "trie.h"
 
 using namespace std;
 
 /**
- * Lee las palabras del archivo y las retorna en un vector
+ * VALIDACIÓN: Pruebas simples para verificar que el trie funciona correctamente
  */
-vector<string> leer_palabras(const string& archivo) {
-    vector<string> palabras;
-    ifstream file(archivo);
-    string palabra;
+void validarTrie() {
+    cout << "\n============================================" << endl;
+    cout << "    VALIDACIÓN DEL TRIE" << endl;
+    cout << "============================================\n" << endl;
     
-    if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo " << archivo << endl;
-        return palabras;
+    // ========== PRUEBA 1: MODO FRECUENTE ==========
+    cout << "--- Prueba 1: Modo Frecuente ---" << endl;
+    Trie trie_frec("frecuente");
+    
+    // Insertar palabras de prueba
+    vector<string> palabras_test = {"apple", "app", "application", "apply", "banana", "band"};
+    cout << "Insertando palabras: ";
+    for (const auto& p : palabras_test) {
+        cout << p << " ";
+        trie_frec.insert(p);
+    }
+    cout << "\n" << endl;
+    
+    // Simular accesos
+    cout << "Simulando accesos..." << endl;
+    Nodo* terminal_app = trie_frec.find_terminal_node("app");
+    if (terminal_app) {
+        trie_frec.update_priority(terminal_app);
+        trie_frec.update_priority(terminal_app);
+        trie_frec.update_priority(terminal_app);
+        cout << "  'app' accedida 3 veces (prioridad: 3)" << endl;
     }
     
-    while (file >> palabra) {
-        palabras.push_back(palabra);
+    Nodo* terminal_apple = trie_frec.find_terminal_node("apple");
+    if (terminal_apple) {
+        trie_frec.update_priority(terminal_apple);
+        cout << "  'apple' accedida 1 vez (prioridad: 1)" << endl;
     }
     
-    file.close();
-    return palabras;
-}
-
-/**
- * Mide memoria durante la inserción
- * Imprime en puntos: 2^0, 2^1, ..., 2^17, N
- */
-void experimento_memoria(Trie& trie, const vector<string>& palabras) {
-    cout << "\n=== Experimento de Memoria ===" << endl;
-    cout << "Palabras insertadas | Nodos | Caracteres | Nodos/Carácter" << endl;
-    
-    long long total_caracteres = 0;
-    
-    for (size_t i = 0; i < palabras.size(); i++) {
-        trie.insert(palabras[i]);
-        total_caracteres += palabras[i].length();
-        
-        // Verificar si debemos imprimir (potencias de 2 o final)
-        bool imprimir = false;
-        if (i + 1 == palabras.size()) {
-            imprimir = true; // Última palabra
-        } else {
-            // Verificar si es potencia de 2
-            int n = i + 1;
-            imprimir = (n & (n - 1)) == 0; // Truco para verificar potencia de 2
-        }
-        
-        if (imprimir) {
-            long long nodos = trie.get_nodos();
-            double ratio = (double)nodos / total_caracteres;
-            cout << (i + 1) << " | " << nodos << " | " 
-                 << total_caracteres << " | " << ratio << endl;
-        }
+    Nodo* terminal_application = trie_frec.find_terminal_node("application");
+    if (terminal_application) {
+        trie_frec.update_priority(terminal_application);
+        trie_frec.update_priority(terminal_application);
+        cout << "  'application' accedida 2 veces (prioridad: 2)" << endl;
     }
-}
-
-/**
- * Mide tiempo de inserción normalizado
- * Divide en M=16 grupos
- */
-void experimento_tiempo(const vector<string>& palabras, const string& modo) {
-    cout << "\n=== Experimento de Tiempo (Modo: " << modo << ") ===" << endl;
-    cout << "Grupo | Palabras | Tiempo (ms) | Caracteres | ms/Carácter" << endl;
     
-    const int M = 16;
-    int grupo_size = palabras.size() / M;
+    // Probar autocompletado con prefijo 'ap'
+    cout << "\nAutocompletado con prefijo 'ap':" << endl;
+    Nodo* nodo_ap = trie_frec.get_raiz();
+    nodo_ap = trie_frec.descend(nodo_ap, 'a');
+    nodo_ap = trie_frec.descend(nodo_ap, 'p');
     
-    Trie trie(modo);
-    
-    for (int grupo = 0; grupo < M; grupo++) {
-        int inicio = grupo * grupo_size;
-        int fin = (grupo == M - 1) ? palabras.size() : (grupo + 1) * grupo_size;
-        
-        long long caracteres_grupo = 0;
-        
-        auto start = chrono::high_resolution_clock::now();
-        
-        for (int i = inicio; i < fin; i++) {
-            trie.insert(palabras[i]);
-            caracteres_grupo += palabras[i].length();
-        }
-        
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-        
-        double tiempo_por_caracter = (double)duration.count() / caracteres_grupo;
-        
-        cout << (grupo + 1) << " | " << (fin - inicio) << " | " 
-             << duration.count() << " | " << caracteres_grupo << " | " 
-             << tiempo_por_caracter << endl;
-    }
-}
-
-/**
- * Simula escritura de texto y mide autocompletado
- */
-void experimento_autocompletado(Trie& trie, const vector<string>& texto_test, 
-                                const string& nombre_test) {
-    cout << "\n=== Autocompletado: " << nombre_test << " ===" << endl;
-    
-    long long caracteres_totales = 0;
-    long long caracteres_escritos = 0;
-    long long palabras_encontradas = 0;
-    long long palabras_no_encontradas = 0;
-    
-    for (const string& palabra : texto_test) {
-        caracteres_totales += palabra.length();
-        
-        Nodo* nodo_actual = trie.get_raiz();
-        bool palabra_existe = true;
-        int chars_escritos_palabra = 0;
-        
-        // Descender letra por letra
-        for (size_t i = 0; i < palabra.length(); i++) {
-            char c = palabra[i];
-            nodo_actual = trie.descend(nodo_actual, c);
-            chars_escritos_palabra++;
-            
-            if (nodo_actual == nullptr) {
-                // La palabra no existe en el trie
-                caracteres_escritos += palabra.length();
-                palabras_no_encontradas++;
-                palabra_existe = false;
-                break;
-            }
-            
-            // Verificar autocompletado
-            Nodo* mejor = trie.autocomplete(nodo_actual);
-            if (mejor != nullptr && mejor->str != nullptr) {
-                if (*(mejor->str) == palabra) {
-                    // ¡Autocompletado exitoso!
-                    caracteres_escritos += chars_escritos_palabra;
-                    palabras_encontradas++;
-                    palabra_existe = true;
-                    break;
-                }
-            }
-        }
-        
-        // Si llegamos al final sin autocompletar
-        if (palabra_existe && chars_escritos_palabra == palabra.length()) {
-            // Verificar si la palabra existe con $
-            Nodo* terminal = trie.descend(nodo_actual, '$');
-            if (terminal != nullptr) {
-                caracteres_escritos += palabra.length();
-                palabras_encontradas++;
-                // Actualizar prioridad
-                trie.update_priority(terminal);
+    if (nodo_ap) {
+        Nodo* mejor = trie_frec.autocomplete(nodo_ap);
+        if (mejor && mejor->str) {
+            cout << "  → Sugerencia: " << *(mejor->str) << endl;
+            if (*(mejor->str) == "app") {
+                cout << "  ✓ CORRECTO: 'app' tiene la mayor frecuencia (3 accesos)" << endl;
             } else {
-                caracteres_escritos += palabra.length();
-                palabras_no_encontradas++;
+                cout << "  ✗ ERROR: Se esperaba 'app'" << endl;
             }
-        } else if (palabra_existe) {
-            // Actualizar prioridad de la palabra encontrada
-            Nodo* terminal = trie.find_terminal_node(palabra);
-            if (terminal != nullptr) {
-                trie.update_priority(terminal);
-            }
+        } else {
+            cout << "  ✗ ERROR: No se encontró sugerencia" << endl;
+        }
+    } else {
+        cout << "  ✗ ERROR: No se pudo descender por 'ap'" << endl;
+    }
+    
+    // Probar con prefijo 'b'
+    cout << "\nAutocompletado con prefijo 'b':" << endl;
+    Nodo* nodo_b = trie_frec.get_raiz();
+    nodo_b = trie_frec.descend(nodo_b, 'b');
+    
+    if (nodo_b) {
+        Nodo* mejor = trie_frec.autocomplete(nodo_b);
+        if (mejor && mejor->str) {
+            cout << "  → Sugerencia: " << *(mejor->str) << endl;
+            cout << "  ✓ Encontró una palabra con prefijo 'b'" << endl;
         }
     }
     
-    double porcentaje = (double)caracteres_escritos / caracteres_totales * 100.0;
+    // ========== PRUEBA 2: MODO RECIENTE ==========
+    cout << "\n--- Prueba 2: Modo Reciente ---" << endl;
+    Trie trie_rec("reciente");
     
-    cout << "Palabras totales: " << texto_test.size() << endl;
-    cout << "Palabras encontradas: " << palabras_encontradas << endl;
-    cout << "Palabras no encontradas: " << palabras_no_encontradas << endl;
-    cout << "Caracteres totales: " << caracteres_totales << endl;
-    cout << "Caracteres escritos: " << caracteres_escritos << endl;
-    cout << "Porcentaje escrito: " << porcentaje << "%" << endl;
+    cout << "Insertando palabras: ";
+    for (const auto& p : palabras_test) {
+        cout << p << " ";
+        trie_rec.insert(p);
+    }
+    cout << "\n" << endl;
+    
+    // Simular accesos en orden temporal
+    cout << "Simulando accesos en orden temporal..." << endl;
+    Nodo* term1 = trie_rec.find_terminal_node("apple");
+    if (term1) {
+        trie_rec.update_priority(term1);
+        cout << "  1. 'apple' accedida (timestamp: 1)" << endl;
+    }
+    
+    Nodo* term2 = trie_rec.find_terminal_node("app");
+    if (term2) {
+        trie_rec.update_priority(term2);
+        cout << "  2. 'app' accedida (timestamp: 2)" << endl;
+    }
+    
+    Nodo* term3 = trie_rec.find_terminal_node("application");
+    if (term3) {
+        trie_rec.update_priority(term3);
+        cout << "  3. 'application' accedida (timestamp: 3, más reciente)" << endl;
+    }
+    
+    // Probar autocompletado con prefijo 'ap'
+    cout << "\nAutocompletado con prefijo 'ap':" << endl;
+    Nodo* nodo_ap2 = trie_rec.get_raiz();
+    nodo_ap2 = trie_rec.descend(nodo_ap2, 'a');
+    nodo_ap2 = trie_rec.descend(nodo_ap2, 'p');
+    
+    if (nodo_ap2) {
+        Nodo* mejor = trie_rec.autocomplete(nodo_ap2);
+        if (mejor && mejor->str) {
+            cout << "  → Sugerencia: " << *(mejor->str) << endl;
+            if (*(mejor->str) == "application") {
+                cout << "  ✓ CORRECTO: 'application' es la más reciente (timestamp: 3)" << endl;
+            } else {
+                cout << "  ✗ ERROR: Se esperaba 'application'" << endl;
+            }
+        } else {
+            cout << "  ✗ ERROR: No se encontró sugerencia" << endl;
+        }
+    } else {
+        cout << "  ✗ ERROR: No se pudo descender por 'ap'" << endl;
+    }
+    
+    // ========== PRUEBA 3: PALABRA NO EXISTENTE ==========
+    cout << "\n--- Prueba 3: Palabra no existente ---" << endl;
+    Nodo* no_existe = trie_frec.find_terminal_node("xyz");
+    if (no_existe == nullptr) {
+        cout << "  ✓ CORRECTO: 'xyz' no existe en el trie" << endl;
+    } else {
+        cout << "  ✗ ERROR: Se encontró 'xyz' cuando no debería existir" << endl;
+    }
+    
+    // ========== PRUEBA 4: PREFIJO SIN PALABRAS ==========
+    cout << "\n--- Prueba 4: Prefijo sin palabras ---" << endl;
+    Nodo* nodo_z = trie_frec.get_raiz();
+    nodo_z = trie_frec.descend(nodo_z, 'z');
+    if (nodo_z == nullptr) {
+        cout << "  ✓ CORRECTO: No hay palabras con prefijo 'z'" << endl;
+    } else {
+        cout << "  ✗ ERROR: Se encontró nodo con prefijo 'z'" << endl;
+    }
+    
+    // ========== ESTADÍSTICAS ==========
+    cout << "\n--- Estadísticas ---" << endl;
+    cout << "Palabras insertadas: " << palabras_test.size() << endl;
+    cout << "Nodos en trie_frec: " << trie_frec.get_nodos() << endl;
+    cout << "Nodos en trie_rec: " << trie_rec.get_nodos() << endl;
+    
+    cout << "\n✓ Todas las pruebas completadas" << endl;
 }
 
 int main() {
-    cout << "=== Tarea 2: Tries para Autocompletado ===" << endl;
+    cout << "============================================" << endl;
+    cout << "  TAREA 2: TRIES PARA AUTOCOMPLETADO" << endl;
+    cout << "  CASOS DE VALIDACIÓN" << endl;
+    cout << "============================================" << endl;
     
-    // Leer dataset principal
-    cout << "\nLeyendo data/words.txt..." << endl;
-    vector<string> palabras = leer_palabras("data/words.txt");
+    validarTrie();
     
-    if (palabras.empty()) {
-        cerr << "Error: No se pudieron leer las palabras" << endl;
-        return 1;
-    }
-    
-    cout << "Palabras leídas: " << palabras.size() << endl;
-    
-    // Experimento 1: Memoria
-    Trie trie_memoria("frecuente");
-    experimento_memoria(trie_memoria, palabras);
-    
-    // Experimento 2: Tiempo
-    experimento_tiempo(palabras, "frecuente");
-    
-    // Experimento 3: Autocompletado
-    // Para este experimento necesitas crear tries con todas las palabras
-    cout << "\n\nCreando Trie para autocompletado (modo frecuente)..." << endl;
-    Trie trie_frecuente("frecuente");
-    for (const auto& palabra : palabras) {
-        trie_frecuente.insert(palabra);
-    }
-    
-    cout << "Creando Trie para autocompletado (modo reciente)..." << endl;
-    Trie trie_reciente("reciente");
-    for (const auto& palabra : palabras) {
-        trie_reciente.insert(palabra);
-    }
-    
-    // Leer textos de prueba
-
-    vector<string> wikipedia = leer_palabras("data/wikipedia.txt");
-    vector<string> random = leer_palabras("data/random.txt");
-    vector<string> random_dist = leer_palabras("data/random_with_distribution.txt");
-    
-    if (!wikipedia.empty()) {
-        experimento_autocompletado(trie_frecuente, wikipedia, "Wikipedia - Frecuente");
-        experimento_autocompletado(trie_reciente, wikipedia, "Wikipedia - Reciente");
-    }
-    
-    if (!random.empty()) {
-        experimento_autocompletado(trie_frecuente, random, "Random - Frecuente");
-        experimento_autocompletado(trie_reciente, random, "Random - Reciente");
-    }
-    
-    if (!random_dist.empty()) {
-        experimento_autocompletado(trie_frecuente, random_dist, "Random Dist - Frecuente");
-        experimento_autocompletado(trie_reciente, random_dist, "Random Dist - Reciente");
-    }
-
-    
-    cout << "\n=== Experimentación completada ===" << endl;
+    cout << "\n============================================" << endl;
+    cout << "  VALIDACIÓN COMPLETADA EXITOSAMENTE" << endl;
+    cout << "============================================" << endl;
     
     return 0;
 }

@@ -51,11 +51,7 @@ void Trie::crear_nodo(Nodo *n, int i){
 }
 
 long long Trie::obtenerTimestamp() {
-    auto ahora = chrono::system_clock::now();
-    auto timestamp = chrono::duration_cast<chrono::seconds>(
-        ahora.time_since_epoch()
-    ).count();
-    return timestamp;
+    return ++access_timestamp;
 }
 
 
@@ -90,6 +86,18 @@ void Trie::insert(string w){
     n->priority = 0;         //prioridad inicial
     n->best_terminal = n;    //por ahora él mismo es el mejor
     n->best_priority = 0;
+
+    // Propagar este terminal hacia arriba si es necesario
+    Nodo *padre = n->parent;
+    while (padre != nullptr) {
+        if (padre->best_terminal == nullptr || padre->best_priority < n->best_priority) {
+            padre->best_terminal = n;
+            padre->best_priority = n->best_priority;
+            padre = padre->parent;
+        } else {
+            break;
+        }
+    }
 }
 
 Nodo * Trie :: descend(Nodo *v, char c){
@@ -112,23 +120,50 @@ Nodo * Trie :: descend(Nodo *v, char c){
 }
 
 void Trie :: update_priority(Nodo *v){
-    if (v != nullptr) {
-        if (mode == "frecuente") {
-            v->priority++;
-            if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
-                update_priority(v->parent);
+    if (v == nullptr) return;
+    
+    // Actualizar la prioridad del nodo terminal
+    if (mode == "frecuente") {
+        v->priority++;
+    } else if (mode == "reciente") {
+        v->priority = obtenerTimestamp();
+    }
+    
+    // Para nodos terminales, ellos mismos son su mejor terminal
+    if (v->str != nullptr) {
+        v->best_terminal = v;
+        v->best_priority = v->priority;
+    }
+    
+    // Propagar hacia arriba
+    Nodo *actual = v->parent;
+    while (actual != nullptr) {
+        // Buscar el mejor terminal entre todos los hijos
+        Nodo *mejor = nullptr;
+        long long mejor_prioridad = -1;
+        
+        for (int i = 0; i < 27; i++) {
+            if (actual->next[i] != nullptr) {
+                Nodo *hijo = actual->next[i];
+                if (hijo->best_terminal != nullptr) {
+                    if (hijo->best_priority > mejor_prioridad) {
+                        mejor_prioridad = hijo->best_priority;
+                        mejor = hijo->best_terminal;
+                    }
+                }
             }
-
         }
-        if (mode == "reciente") {
-            v->priority = obtenerTimestamp();
-            if (v->parent != nullptr && (v->parent)->priority < v-> priority) {
-                update_priority(v->parent);
-            }
-            
+        
+        // Si encontramos un mejor o cambió, actualizar y seguir subiendo
+        if (mejor != nullptr && (actual->best_terminal != mejor || actual->best_priority != mejor_prioridad)) {
+            actual->best_terminal = mejor;
+            actual->best_priority = mejor_prioridad;
+            actual = actual->parent; // Continuar hacia arriba
+        } else {
+            // Si no hubo cambios significativos, podemos detenernos
+            break;
         }
     }
-
 }
 
 Nodo * Trie :: autocomplete(Nodo *v){

@@ -21,6 +21,13 @@ struct Nodo {
     string *str; //solo != nullptr en nodos terminales, entiendo que c++ ya maneja los strings por debajo como punteros 
     Nodo *best_terminal;
     long long best_priority; //tipo cambiado por long long
+
+    // Constructor para inicializar todos los campos
+    Nodo() : parent(nullptr), priority(0), str(nullptr), best_terminal(nullptr), best_priority(0) {
+        for (int i = 0; i < 27; i++) {
+            next[i] = nullptr;
+        }
+    }
 };
 
 #endif // ESTRUCTURAS_H

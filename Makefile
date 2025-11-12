@@ -65,3 +65,28 @@ help:
 	@echo "  trie_experimentos - Experimentación completa con salida a CSV"
 
 .PHONY: all clean run test help
+
+
+# Makefile para validación del Trie
+
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+HEADERS = trie.h estructuras.h
+
+# Target para validación
+validacion: trie.o validacion.o
+	$(CXX) $(CXXFLAGS) -o validacion trie.o validacion.o
+
+# Compilar objetos
+%.o: %.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Limpiar
+clean:
+	rm -f *.o validacion
+
+# Ejecutar validación
+test: validacion
+	./validacion
+
+.PHONY: clean test
